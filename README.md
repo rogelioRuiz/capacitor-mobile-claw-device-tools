@@ -4,7 +4,7 @@
 [![CI](https://github.com/rogelioRuiz/capacitor-mobile-claw-device-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/rogelioRuiz/capacitor-mobile-claw-device-tools/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Device MCP tools for [capacitor-mobile-claw](https://github.com/rogelioRuiz/capacitor-mobile-claw) — **64+ hardware and network tools** that give an on-device AI agent access to clipboard, camera, SSH, sensors, Bluetooth, NFC, and more via the Model Context Protocol.
+Device MCP tools for [capacitor-mobile-claw](https://www.npmjs.com/package/capacitor-mobile-claw) — **64+ hardware and network tools** that give an on-device AI agent access to clipboard, camera, SSH, sensors, Bluetooth, NFC, and more via the Model Context Protocol.
 
 ## Install
 

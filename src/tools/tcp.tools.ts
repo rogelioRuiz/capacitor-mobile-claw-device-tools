@@ -1,4 +1,4 @@
-import { NetworkTools } from 'capacitor-network-tools'
+import { NetworkTools } from '../plugin'
 import type { DeviceTool } from '../types'
 
 export const tcpTools: DeviceTool[] = [

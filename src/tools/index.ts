@@ -1,7 +1,7 @@
 /**
  * All device MCP tools — aggregated from hardware and network tool files.
  *
- * Network tools require the capacitor-network-tools native plugin.
+ * Network tools use the NetworkTools Capacitor plugin (src/plugin.ts).
  * Hardware tools use official @capacitor/* and community plugins.
  */
 

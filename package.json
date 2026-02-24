@@ -15,7 +15,6 @@
     "url": "https://github.com/rogelioRuiz/capacitor-mobile-claw-device-tools/issues"
   },
   "scripts": {
-    "postinstall": "cd plugins/capacitor-network-tools && npm install && npm run build",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "lint": "biome check .",
@@ -75,7 +74,6 @@
     "@capacitor/share": "^8.0.1",
     "@capgo/capacitor-health": "^8.2.15",
     "@capgo/capacitor-nfc": "^8.0.15",
-    "capacitor-network-tools": "file:plugins/capacitor-network-tools",
     "@biomejs/biome": "^2.4.4",
     "@changesets/cli": "^2.29.0",
     "typescript": "^5.7.0"

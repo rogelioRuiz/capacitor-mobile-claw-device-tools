@@ -1,0 +1,96 @@
+{
+  "name": "capacitor-mobile-claw-device-tools",
+  "version": "1.0.0",
+  "description": "Device MCP tools for capacitor-mobile-claw — 64+ hardware and network tools (clipboard, camera, SSH, sensors, etc.)",
+  "main": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "type": "module",
+  "author": "Techxagon",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rogelioRuiz/capacitor-mobile-claw-device-tools.git"
+  },
+  "homepage": "https://github.com/rogelioRuiz/capacitor-mobile-claw-device-tools#readme",
+  "bugs": {
+    "url": "https://github.com/rogelioRuiz/capacitor-mobile-claw-device-tools/issues"
+  },
+  "scripts": {
+    "postinstall": "cd plugins/capacitor-network-tools && npm install && npm run build",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "lint": "biome check .",
+    "lint:fix": "biome check --fix .",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist/esm/"
+  ],
+  "peerDependencies": {
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/camera": "^8.0.0",
+    "@capacitor/clipboard": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/geolocation": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.0",
+    "@capacitor/network": "^8.0.0",
+    "@capacitor/preferences": "^8.0.0",
+    "@capacitor/push-notifications": "^8.0.0",
+    "@capacitor/share": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@capacitor/clipboard": { "optional": true },
+    "@capacitor/camera": { "optional": true },
+    "@capacitor/geolocation": { "optional": true },
+    "@capacitor/haptics": { "optional": true },
+    "@capacitor/local-notifications": { "optional": true },
+    "@capacitor/network": { "optional": true },
+    "@capacitor/share": { "optional": true },
+    "@capacitor/app": { "optional": true },
+    "@capacitor/preferences": { "optional": true },
+    "@capacitor/push-notifications": { "optional": true }
+  },
+  "devDependencies": {
+    "@aparajita/capacitor-biometric-auth": "^10.0.0",
+    "@aparajita/capacitor-secure-storage": "^8.0.0",
+    "@capacitor-community/bluetooth-le": "^8.1.0",
+    "@capacitor-community/contacts": "^7.1.0",
+    "@capacitor-community/keep-awake": "^8.0.0",
+    "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor-community/text-to-speech": "^8.0.0",
+    "@capacitor-mlkit/barcode-scanning": "^8.0.1",
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/camera": "^8.0.1",
+    "@capacitor/clipboard": "^8.0.1",
+    "@capacitor/core": "^8.1.0",
+    "@capacitor/device": "^8.0.1",
+    "@capacitor/geolocation": "^8.1.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.1",
+    "@capacitor/motion": "^8.0.0",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/push-notifications": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
+    "@capgo/capacitor-health": "^8.2.15",
+    "@capgo/capacitor-nfc": "^8.0.15",
+    "capacitor-network-tools": "file:plugins/capacitor-network-tools",
+    "@biomejs/biome": "^2.4.4",
+    "@changesets/cli": "^2.29.0",
+    "typescript": "^5.7.0"
+  },
+  "keywords": [
+    "capacitor",
+    "mcp",
+    "device-tools",
+    "mobile-claw",
+    "hardware",
+    "network",
+    "sensors"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "name": "capacitor-network-tools",
+  "version": "1.0.0",
+  "description": "Capacitor plugin for native SSH, HTTP, TCP/UDP, mDNS discovery, ping, and Wake-on-LAN — enabling AI agents to interact with local network devices.",
+  "main": "dist/esm/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
+  "files": [
+    "android/src/main/",
+    "android/build.gradle",
+    "dist/",
+    "ios/Sources/",
+    "ios/Package.swift",
+    "CapacitorNetworkTools.podspec"
+  ],
+  "keywords": [
+    "capacitor",
+    "plugin",
+    "native",
+    "ssh",
+    "sftp",
+    "http",
+    "tcp",
+    "udp",
+    "mdns",
+    "ping",
+    "wake-on-lan",
+    "network"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "watch": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "author": "T6X",
+  "license": "MIT",
+  "peerDependencies": {
+    "@capacitor/core": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/core": "^8.0.0",
+    "typescript": "~5.7.0",
+    "rimraf": "^6.0.0"
+  },
+  "capacitor": {
+    "ios": {
+      "src": "ios"
+    },
+    "android": {
+      "src": "android"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "capacitor-mobile-claw-device-tools",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Device MCP tools for capacitor-mobile-claw — 64+ hardware and network tools (clipboard, camera, SSH, sensors, etc.)",
   "main": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",

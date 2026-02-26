@@ -5,7 +5,7 @@ export const sshTools: DeviceTool[] = [
   {
     name: 'ssh_connect',
     description:
-      'Open an SSH connection to a device on the local network. Returns a session ID for subsequent ssh_exec and ssh_disconnect calls. Supports password and private key authentication.',
+      'Open an SSH connection to a device on the local network. Returns a session ID for subsequent ssh_exec and ssh_disconnect calls. Supports password and private key authentication. The session auto-reconnects if the connection is interrupted and persists for 15 minutes of inactivity. Call ssh_connect again only when connecting to a different host or with different credentials.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -32,7 +32,7 @@ export const sshTools: DeviceTool[] = [
   {
     name: 'ssh_exec',
     description:
-      'Execute a command on a connected SSH session. Returns stdout, stderr, and exit code. Use ssh_connect first to establish a session.',
+      'Execute a command on a connected SSH session. Returns stdout, stderr, and exit code. The connection is restored automatically if it was interrupted. Use ssh_connect first to get a session ID.',
     inputSchema: {
       type: 'object',
       properties: {

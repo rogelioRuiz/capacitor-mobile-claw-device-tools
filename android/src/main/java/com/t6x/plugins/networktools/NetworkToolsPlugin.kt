@@ -10,7 +10,8 @@ import kotlinx.coroutines.*
 @CapacitorPlugin(name = "NetworkTools")
 class NetworkToolsPlugin : Plugin() {
 
-    private val sshClient = SshClient()
+    private val sshRegistry by lazy { SessionRegistry(context, "ssh") }
+    private val sshClient by lazy { SshClient(sshRegistry) }
     private val httpClient = HttpClient()
     private val tcpClient = TcpClient()
     private val udpClient = UdpClient()

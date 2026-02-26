@@ -25,7 +25,8 @@ public class NetworkToolsPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "wolSend", returnType: CAPPluginReturnPromise),
     ]
 
-    private let sshClient = SshClient()
+    private let sshRegistry = SessionRegistry(namespace: "ssh")
+    private lazy var sshClient = SshClient(registry: sshRegistry)
     private let httpClient = HttpClientImpl()
     private let tcpClient = TcpClientImpl()
     private let udpClient = UdpClientImpl()

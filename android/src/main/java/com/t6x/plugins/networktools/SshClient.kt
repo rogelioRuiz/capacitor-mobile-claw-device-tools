@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 data class ExecResult(val stdout: String, val stderr: String, val exitCode: Int)
 
-class SshClient {
+class SshClient(private val registry: SessionRegistry) {
 
     private val sessions = ConcurrentHashMap<String, Session>()
 
@@ -22,35 +22,24 @@ class SshClient {
         password: String?,
         privateKey: String?
     ): String {
-        val jsch = JSch()
-
-        // Add private key if provided
-        if (!privateKey.isNullOrBlank()) {
-            jsch.addIdentity("key", privateKey.toByteArray(), null, null)
-        }
-
-        val session = jsch.getSession(username, host, port)
-
-        // Set password if provided
-        if (!password.isNullOrBlank()) {
-            session.setPassword(password)
-        }
-
-        // Skip host key checking (common for IoT/local devices)
-        val config = java.util.Properties()
-        config["StrictHostKeyChecking"] = "no"
-        session.setConfig(config)
-
-        session.timeout = 15000
-        session.connect()
-
+        val session = createJschSession(host, port, username, password, privateKey)
         val sessionId = UUID.randomUUID().toString()
         sessions[sessionId] = session
+        registry.register(
+            sessionId, mapOf(
+                "host" to host,
+                "port" to port,
+                "username" to username,
+                "password" to password,
+                "privateKey" to privateKey
+            )
+        )
         return sessionId
     }
 
     fun exec(sessionId: String, command: String, timeout: Long): ExecResult {
-        val session = sessions[sessionId] ?: throw IllegalArgumentException("Invalid session ID: $sessionId")
+        val session = sessions[sessionId] ?: reconnect(sessionId)
+        registry.touch(sessionId)
 
         val channel = session.openChannel("exec") as ChannelExec
         channel.setCommand(command)
@@ -62,7 +51,6 @@ class SshClient {
 
         channel.connect(timeout.toInt())
 
-        // Wait for channel to close
         val startTime = System.currentTimeMillis()
         while (!channel.isClosed) {
             if (System.currentTimeMillis() - startTime > timeout) {
@@ -85,17 +73,20 @@ class SshClient {
     fun disconnect(sessionId: String) {
         val session = sessions.remove(sessionId)
         session?.disconnect()
+        registry.evict(sessionId)
     }
 
     fun disconnectAll() {
         sessions.values.forEach { it.disconnect() }
         sessions.clear()
+        registry.evictAll()
     }
 
     // === SFTP ===
 
     fun sftpList(sessionId: String, path: String): JSONArray {
-        val session = sessions[sessionId] ?: throw IllegalArgumentException("Invalid session ID: $sessionId")
+        val session = sessions[sessionId] ?: reconnect(sessionId)
+        registry.touch(sessionId)
 
         val channel = session.openChannel("sftp") as ChannelSftp
         channel.connect()
@@ -126,7 +117,8 @@ class SshClient {
     }
 
     fun sftpDownload(sessionId: String, remotePath: String): String {
-        val session = sessions[sessionId] ?: throw IllegalArgumentException("Invalid session ID: $sessionId")
+        val session = sessions[sessionId] ?: reconnect(sessionId)
+        registry.touch(sessionId)
 
         val channel = session.openChannel("sftp") as ChannelSftp
         channel.connect()
@@ -141,7 +133,8 @@ class SshClient {
     }
 
     fun sftpUpload(sessionId: String, remotePath: String, base64Data: String) {
-        val session = sessions[sessionId] ?: throw IllegalArgumentException("Invalid session ID: $sessionId")
+        val session = sessions[sessionId] ?: reconnect(sessionId)
+        registry.touch(sessionId)
 
         val channel = session.openChannel("sftp") as ChannelSftp
         channel.connect()
@@ -152,5 +145,53 @@ class SshClient {
         } finally {
             channel.disconnect()
         }
+    }
+
+    // === Private ===
+
+    private fun createJschSession(
+        host: String,
+        port: Int,
+        username: String,
+        password: String?,
+        privateKey: String?
+    ): Session {
+        val jsch = JSch()
+
+        if (!privateKey.isNullOrBlank()) {
+            jsch.addIdentity("key", privateKey.toByteArray(), null, null)
+        }
+
+        val session = jsch.getSession(username, host, port)
+
+        if (!password.isNullOrBlank()) {
+            session.setPassword(password)
+        }
+
+        val config = java.util.Properties()
+        config["StrictHostKeyChecking"] = "no"
+        session.setConfig(config)
+
+        session.timeout = 15000
+        session.setServerAliveInterval(30000)
+        session.setServerAliveCountMax(3)
+        session.connect()
+
+        return session
+    }
+
+    private fun reconnect(sessionId: String): Session {
+        val params = registry.getParams(sessionId)
+            ?: throw IllegalArgumentException("SSH session expired or unknown: $sessionId")
+
+        val host = params["host"] as? String ?: throw IllegalArgumentException("Stored params missing host")
+        val port = (params["port"] as? Int) ?: 22
+        val username = params["username"] as? String ?: throw IllegalArgumentException("Stored params missing username")
+        val password = params["password"] as? String
+        val privateKey = params["privateKey"] as? String
+
+        val session = createJschSession(host, port, username, password, privateKey)
+        sessions[sessionId] = session
+        return session
     }
 }

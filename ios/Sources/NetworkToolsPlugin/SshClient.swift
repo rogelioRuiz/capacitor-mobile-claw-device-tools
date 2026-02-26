@@ -10,38 +10,31 @@ struct ExecResult {
 class SshClient {
     private var sessions: [String: NMSSHSession] = [:]
     private let lock = NSLock()
+    private let registry: SessionRegistry
+
+    init(registry: SessionRegistry) {
+        self.registry = registry
+    }
 
     func connect(host: String, port: Int, username: String, password: String?, privateKey: String?) throws -> String {
-        let session = NMSSHSession(host: host, port: port, andUsername: username)
-        session.connect()
-
-        guard session.isConnected else {
-            throw NSError(domain: "SSH", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to connect to \(host):\(port)"])
-        }
-
-        // Authenticate
-        if let key = privateKey {
-            session.authenticate(byInMemoryPublicKey: nil, privateKey: key, andPassword: password)
-        } else if let pass = password {
-            session.authenticate(byPassword: pass)
-        }
-
-        guard session.isAuthorized else {
-            session.disconnect()
-            throw NSError(domain: "SSH", code: -2, userInfo: [NSLocalizedDescriptionKey: "Authentication failed for \(username)@\(host)"])
-        }
-
+        let session = try createNMSSHSession(host: host, port: port, username: username, password: password, privateKey: privateKey)
         let sessionId = UUID().uuidString
         lock.lock()
         sessions[sessionId] = session
         lock.unlock()
+        registry.register(sessionId, params: [
+            "host": host,
+            "port": port,
+            "username": username,
+            "password": password as Any?,
+            "privateKey": privateKey as Any?,
+        ])
         return sessionId
     }
 
     func exec(sessionId: String, command: String, timeout: Int) throws -> ExecResult {
-        guard let session = getSession(sessionId) else {
-            throw NSError(domain: "SSH", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid session ID: \(sessionId)"])
-        }
+        let session = try getOrReconnect(sessionId)
+        registry.touch(sessionId)
 
         session.channel.requestTerminal = false
         session.channel.type = NMSSHChannelType.exec
@@ -65,22 +58,23 @@ class SshClient {
         let session = sessions.removeValue(forKey: sessionId)
         lock.unlock()
         session?.disconnect()
+        registry.evict(sessionId)
     }
 
     func disconnectAll() {
         lock.lock()
-        let allSessions = sessions.values
+        let allSessions = Array(sessions.values)
         sessions.removeAll()
         lock.unlock()
         allSessions.forEach { $0.disconnect() }
+        registry.evictAll()
     }
 
     // MARK: - SFTP
 
     func sftpList(sessionId: String, path: String) throws -> [[String: Any]] {
-        guard let session = getSession(sessionId) else {
-            throw NSError(domain: "SSH", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid session ID"])
-        }
+        let session = try getOrReconnect(sessionId)
+        registry.touch(sessionId)
 
         let sftp = NMSFTP(session: session)
         sftp.connect()
@@ -109,9 +103,8 @@ class SshClient {
     }
 
     func sftpDownload(sessionId: String, remotePath: String) throws -> String {
-        guard let session = getSession(sessionId) else {
-            throw NSError(domain: "SSH", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid session ID"])
-        }
+        let session = try getOrReconnect(sessionId)
+        registry.touch(sessionId)
 
         let sftp = NMSFTP(session: session)
         sftp.connect()
@@ -130,9 +123,8 @@ class SshClient {
     }
 
     func sftpUpload(sessionId: String, remotePath: String, base64Data: String) throws {
-        guard let session = getSession(sessionId) else {
-            throw NSError(domain: "SSH", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid session ID"])
-        }
+        let session = try getOrReconnect(sessionId)
+        registry.touch(sessionId)
 
         guard let data = Data(base64Encoded: base64Data) else {
             throw NSError(domain: "SFTP", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid base64 data"])
@@ -153,9 +145,61 @@ class SshClient {
         }
     }
 
-    private func getSession(_ sessionId: String) -> NMSSHSession? {
+    // MARK: - Private
+
+    private func createNMSSHSession(host: String, port: Int, username: String, password: String?, privateKey: String?) throws -> NMSSHSession {
+        let session = NMSSHSession(host: host, port: port, andUsername: username)
+        session.connect()
+
+        guard session.isConnected else {
+            throw NSError(domain: "SSH", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to connect to \(host):\(port)"])
+        }
+
+        if let key = privateKey {
+            session.authenticate(byInMemoryPublicKey: nil, privateKey: key, andPassword: password)
+        } else if let pass = password {
+            session.authenticate(byPassword: pass)
+        }
+
+        guard session.isAuthorized else {
+            session.disconnect()
+            throw NSError(domain: "SSH", code: -2, userInfo: [NSLocalizedDescriptionKey: "Authentication failed for \(username)@\(host)"])
+        }
+
+        session.keepAliveInterval = 30
+
+        return session
+    }
+
+    private func getOrReconnect(_ sessionId: String) throws -> NMSSHSession {
         lock.lock()
-        let session = sessions[sessionId]
+        let existing = sessions[sessionId]
+        lock.unlock()
+
+        if let session = existing, session.isConnected {
+            return session
+        }
+
+        return try reconnect(sessionId)
+    }
+
+    private func reconnect(_ sessionId: String) throws -> NMSSHSession {
+        guard let params = registry.getParams(sessionId) else {
+            throw NSError(domain: "SSH", code: -3, userInfo: [NSLocalizedDescriptionKey: "SSH session expired or unknown: \(sessionId)"])
+        }
+
+        guard let host = params["host"] as? String,
+              let username = params["username"] as? String else {
+            throw NSError(domain: "SSH", code: -4, userInfo: [NSLocalizedDescriptionKey: "Stored params missing host or username"])
+        }
+
+        let port = params["port"] as? Int ?? 22
+        let password = params["password"] as? String
+        let privateKey = params["privateKey"] as? String
+
+        let session = try createNMSSHSession(host: host, port: port, username: username, password: password, privateKey: privateKey)
+        lock.lock()
+        sessions[sessionId] = session
         lock.unlock()
         return session
     }

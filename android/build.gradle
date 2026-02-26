@@ -64,6 +64,9 @@ dependencies {
     // SSH — JSch (proven Android SSH library, used by JuiceSSH)
     implementation 'com.github.mwiede:jsch:0.2.21'
 
+    // Encrypted credential storage (AndroidKeyStore-backed AES-256-GCM)
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+
     // HTTP — OkHttp (already bundled with Android)
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 

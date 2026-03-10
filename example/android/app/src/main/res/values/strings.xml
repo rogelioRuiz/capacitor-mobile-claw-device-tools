@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DeviceTools Test</string>
+    <string name="title_activity_main">DeviceTools Test</string>
+    <string name="package_name">io.t6x.devicetools.test</string>
+    <string name="custom_url_scheme">io.t6x.devicetools.test</string>
+</resources>

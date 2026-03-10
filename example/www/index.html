@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeviceTools E2E Tests</title>
+  <style>
+    body { font-family: monospace; background: #0d0d0d; color: #e0e0e0; padding: 16px; font-size: 14px; }
+    h1 { color: #7c3aed; margin-bottom: 4px; font-size: 18px; }
+    .subtitle { color: #666; margin-bottom: 20px; font-size: 12px; }
+    .test { margin: 6px 0; padding: 8px 12px; border-radius: 6px; display: flex; align-items: flex-start; gap: 8px; }
+    .test.pass { background: #0a2a0a; border-left: 3px solid #22c55e; }
+    .test.fail { background: #2a0a0a; border-left: 3px solid #ef4444; }
+    .test.skip { background: #1a1a2a; border-left: 3px solid #6366f1; }
+    .test.running { background: #1a1a0a; border-left: 3px solid #eab308; }
+    .test.pending { background: #1a1a1a; border-left: 3px solid #444; }
+    .badge { font-weight: bold; min-width: 60px; flex-shrink: 0; }
+    .pass .badge { color: #22c55e; }
+    .fail .badge { color: #ef4444; }
+    .skip .badge { color: #6366f1; }
+    .running .badge { color: #eab308; }
+    .pending .badge { color: #666; }
+    .detail { color: #999; font-size: 12px; margin-top: 2px; word-break: break-all; }
+    #summary { margin-top: 20px; padding: 12px; border-radius: 8px; background: #111; font-size: 15px; }
+    #status { color: #666; margin-bottom: 12px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>device-tools</h1>
+  <div class="subtitle">E2E Integration Tests</div>
+  <div id="status">Waiting for Capacitor bridge...</div>
+  <div id="tests"></div>
+  <div id="summary"></div>
+
+  <!-- Capacitor bridge -->
+  <script src="capacitor.js"></script>
+  <script>
+    // ─── HTTP result emission ───────────────────────────────────────────────
+    const RUNNER_URL = 'http://127.0.0.1:8099';
+
+    async function emitResult(id, status, detail, error) {
+      const payload = { id, status };
+      if (detail) payload.detail = detail;
+      if (error)  payload.error  = error;
+      console.log('TEST ' + id + ': ' + status + (detail ? ' — ' + detail : '') + (error ? ' — ' + error : ''));
+      try {
+        await fetch(RUNNER_URL + '/__device_tools_result', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch { /* runner not listening */ }
+    }
+
+    async function emitDone(passed, failed, skipped, total) {
+      console.log('DONE: ' + passed + '/' + total + ' passed, ' + skipped + ' skipped');
+      try {
+        await fetch(RUNNER_URL + '/__device_tools_done', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passed, failed, skipped, total }),
+        });
+      } catch { /* ignore */ }
+    }
+
+    // ─── Test definitions ──────────────────────────────────────────────────
+    const tests = [
+      // Tier 1 — Clipboard
+      { id: 'clipboard_write',    name: 'clipboard_write — write text to clipboard' },
+      { id: 'clipboard_read',     name: 'clipboard_read — read text back' },
+      // Tier 1 — Device Info
+      { id: 'device_get_info',    name: 'device_get_info — platform, model, OS' },
+      { id: 'device_get_id',      name: 'device_get_id — unique identifier' },
+      { id: 'device_get_battery', name: 'device_get_battery — level & charging' },
+      { id: 'device_get_language',name: 'device_get_language — language code' },
+      // Tier 1 — Network & App
+      { id: 'network_status',     name: 'network_status — connected & type' },
+      { id: 'app_get_info',       name: 'app_get_info — app id & version' },
+      { id: 'app_get_state',      name: 'app_get_state — isActive' },
+      // Tier 1 — Haptics
+      { id: 'haptics_impact',     name: 'haptics_impact — medium impact' },
+      { id: 'haptics_notification',name:'haptics_notification — success' },
+      { id: 'haptics_vibrate',    name: 'haptics_vibrate — 100ms' },
+      // Tier 1 — Keep Awake
+      { id: 'keep_awake',         name: 'screen_keep_awake — prevent sleep' },
+      { id: 'allow_sleep',        name: 'screen_allow_sleep — allow sleep' },
+      // Tier 1 — Secure Storage (native bridge)
+      { id: 'secure_storage_set', name: 'secure_storage — set value' },
+      { id: 'secure_storage_get', name: 'secure_storage — get value back' },
+      { id: 'secure_storage_remove',name:'secure_storage — remove key' },
+      { id: 'secure_storage_gone',name: 'secure_storage — verify removed' },
+      // Tier 1 — Preferences
+      { id: 'preferences_set',    name: 'preferences — set value' },
+      { id: 'preferences_get',    name: 'preferences — get value back' },
+      { id: 'preferences_remove', name: 'preferences — remove key' },
+      // Tier 1 — Network Tools (native plugin)
+      { id: 'http_request_get',   name: 'http_request — GET /__echo' },
+      { id: 'http_request_post',  name: 'http_request — POST /__echo' },
+      { id: 'ping_localhost',     name: 'ping — 127.0.0.1 reachable' },
+      // Tier 1 — TTS
+      { id: 'tts_get_languages',  name: 'tts_get_languages — list languages' },
+      // Tier 2 — Availability checks (may skip)
+      { id: 'geolocation',        name: 'geolocation — get current position' },
+      { id: 'speech_available',   name: 'speech — is_available' },
+      { id: 'speech_languages',   name: 'speech — get_languages' },
+      { id: 'barcode_supported',  name: 'barcode — is_supported' },
+      { id: 'nfc_supported',      name: 'nfc — is_supported' },
+      { id: 'biometric_available',name: 'biometric — check_biometry' },
+      { id: 'health_available',   name: 'health — is_available' },
+    ];
+
+    // ─── UI helpers ────────────────────────────────────────────────────────
+    const uiResults = {};
+    tests.forEach(t => uiResults[t.id] = { status: 'pending' });
+
+    function renderTests() {
+      const container = document.getElementById('tests');
+      container.innerHTML = tests.map(t => {
+        const r = uiResults[t.id] || { status: 'pending' };
+        return `
+          <div class="test ${r.status}">
+            <span class="badge">${
+              r.status === 'pass'    ? '✓ PASS'  :
+              r.status === 'fail'    ? '✗ FAIL'  :
+              r.status === 'skip'    ? '⊘ SKIP'  :
+              r.status === 'running' ? '… RUN'   : '  ---'
+            }</span>
+            <div>
+              <div>${t.name}</div>
+              ${r.detail ? `<div class="detail">${r.detail}</div>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function mark(id, status, detail) {
+      uiResults[id] = { status, detail: detail || '' };
+      renderTests();
+    }
+
+    // ─── Main test runner ──────────────────────────────────────────────────
+    async function runTests() {
+      const P = window.Capacitor.Plugins;
+      let passed = 0, failed = 0, skipped = 0;
+
+      async function run(id, fn) {
+        mark(id, 'running');
+        try {
+          const detail = await fn();
+          mark(id, 'pass', detail || '');
+          await emitResult(id, 'pass', detail || '');
+          passed++;
+        } catch (err) {
+          const msg = err?.message || String(err);
+          mark(id, 'fail', msg);
+          await emitResult(id, 'fail', '', msg);
+          failed++;
+        }
+      }
+
+      async function runSkippable(id, fn) {
+        mark(id, 'running');
+        try {
+          const detail = await fn();
+          mark(id, 'pass', detail || '');
+          await emitResult(id, 'pass', detail || '');
+          passed++;
+        } catch (err) {
+          const msg = err?.message || String(err);
+          mark(id, 'skip', msg);
+          await emitResult(id, 'skip', '', msg);
+          skipped++;
+        }
+      }
+
+      // ═══ Tier 1: Clipboard ════════════════════════════════════════════════
+      await run('clipboard_write', async () => {
+        await P.Clipboard.write({ string: 'E2E_DEVICE_TOOLS_TEST' });
+        return 'wrote to clipboard';
+      });
+
+      await run('clipboard_read', async () => {
+        // Small delay — Android clipboard write may not be immediately readable
+        await new Promise(r => setTimeout(r, 500));
+        const r = await P.Clipboard.read();
+        if (r.value !== 'E2E_DEVICE_TOOLS_TEST')
+          throw new Error('expected E2E_DEVICE_TOOLS_TEST, got: ' + r.value);
+        return 'value=' + r.value;
+      });
+
+      // ═══ Tier 1: Device Info ══════════════════════════════════════════════
+      await run('device_get_info', async () => {
+        const info = await P.Device.getInfo();
+        if (!['android', 'ios'].includes(info.platform))
+          throw new Error('unexpected platform: ' + info.platform);
+        return 'platform=' + info.platform + ' model=' + info.model;
+      });
+
+      await run('device_get_id', async () => {
+        const r = await P.Device.getId();
+        if (!r.identifier || r.identifier.length === 0)
+          throw new Error('empty identifier');
+        return 'id=' + r.identifier.substring(0, 12) + '...';
+      });
+
+      await run('device_get_battery', async () => {
+        const b = await P.Device.getBatteryInfo();
+        if (typeof b.batteryLevel !== 'number')
+          throw new Error('batteryLevel not a number: ' + typeof b.batteryLevel);
+        return 'level=' + b.batteryLevel + ' charging=' + b.isCharging;
+      });
+
+      await run('device_get_language', async () => {
+        const r = await P.Device.getLanguageCode();
+        if (!r.value || r.value.length === 0)
+          throw new Error('empty language code');
+        return 'lang=' + r.value;
+      });
+
+      // ═══ Tier 1: Network & App ════════════════════════════════════════════
+      await run('network_status', async () => {
+        const s = await P.Network.getStatus();
+        if (typeof s.connected !== 'boolean')
+          throw new Error('connected not boolean');
+        return 'connected=' + s.connected + ' type=' + s.connectionType;
+      });
+
+      await run('app_get_info', async () => {
+        const info = await P.App.getInfo();
+        if (info.id !== 'io.t6x.devicetools.test')
+          throw new Error('unexpected id: ' + info.id);
+        return 'id=' + info.id + ' v=' + info.version;
+      });
+
+      await run('app_get_state', async () => {
+        const s = await P.App.getState();
+        if (typeof s.isActive !== 'boolean')
+          throw new Error('isActive not boolean: ' + typeof s.isActive);
+        return 'isActive=' + s.isActive;
+      });
+
+      // ═══ Tier 1: Haptics ══════════════════════════════════════════════════
+      await run('haptics_impact', async () => {
+        await P.Haptics.impact({ style: 'MEDIUM' });
+        return 'no error';
+      });
+
+      await run('haptics_notification', async () => {
+        await P.Haptics.notification({ type: 'SUCCESS' });
+        return 'no error';
+      });
+
+      await run('haptics_vibrate', async () => {
+        await P.Haptics.vibrate({ duration: 100 });
+        return 'no error';
+      });
+
+      // ═══ Tier 1: Keep Awake ═══════════════════════════════════════════════
+      await run('keep_awake', async () => {
+        await P.KeepAwake.keepAwake();
+        return 'keepingAwake=true';
+      });
+
+      await run('allow_sleep', async () => {
+        await P.KeepAwake.allowSleep();
+        return 'keepingAwake=false';
+      });
+
+      // ═══ Tier 1: Secure Storage (native bridge) ═══════════════════════════
+      const SS_KEY = '_e2e_test_key_';
+      const SS_VAL = 'secret_e2e_value';
+
+      await run('secure_storage_set', async () => {
+        await P.SecureStorage.internalSetItem({ prefixedKey: SS_KEY, data: SS_VAL });
+        return 'stored';
+      });
+
+      await run('secure_storage_get', async () => {
+        const r = await P.SecureStorage.internalGetItem({ prefixedKey: SS_KEY });
+        if (r.data !== SS_VAL)
+          throw new Error('expected ' + SS_VAL + ', got: ' + r.data);
+        return 'value=' + r.data;
+      });
+
+      await run('secure_storage_remove', async () => {
+        const r = await P.SecureStorage.internalRemoveItem({ prefixedKey: SS_KEY });
+        return 'success=' + r.success;
+      });
+
+      await run('secure_storage_gone', async () => {
+        const r = await P.SecureStorage.internalGetItem({ prefixedKey: SS_KEY });
+        if (r.data !== null)
+          throw new Error('expected null, got: ' + r.data);
+        return 'value=null (removed)';
+      });
+
+      // ═══ Tier 1: Preferences ══════════════════════════════════════════════
+      const PREF_KEY = 'e2e_pref_test';
+      const PREF_VAL = 'pref_value_123';
+
+      await run('preferences_set', async () => {
+        await P.Preferences.set({ key: PREF_KEY, value: PREF_VAL });
+        return 'stored';
+      });
+
+      await run('preferences_get', async () => {
+        const r = await P.Preferences.get({ key: PREF_KEY });
+        if (r.value !== PREF_VAL)
+          throw new Error('expected ' + PREF_VAL + ', got: ' + r.value);
+        return 'value=' + r.value;
+      });
+
+      await run('preferences_remove', async () => {
+        await P.Preferences.remove({ key: PREF_KEY });
+        const r = await P.Preferences.get({ key: PREF_KEY });
+        if (r.value !== null)
+          throw new Error('key still exists: ' + r.value);
+        return 'removed and verified';
+      });
+
+      // ═══ Tier 1: Network Tools (http_request, ping) ════════════════════════
+      await run('http_request_get', async () => {
+        const r = await P.NetworkTools.httpRequest({
+          url: RUNNER_URL + '/__echo',
+          method: 'GET',
+          timeout: 10000,
+        });
+        if (r.statusCode !== 200)
+          throw new Error('status=' + r.statusCode);
+        const body = JSON.parse(r.body);
+        if (!body.echo)
+          throw new Error('missing echo field in response');
+        return 'status=200 body=' + r.body.substring(0, 50);
+      });
+
+      await run('http_request_post', async () => {
+        const r = await P.NetworkTools.httpRequest({
+          url: RUNNER_URL + '/__echo',
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ test: true }),
+          timeout: 10000,
+        });
+        if (r.statusCode !== 200)
+          throw new Error('status=' + r.statusCode);
+        return 'status=200';
+      });
+
+      await run('ping_localhost', async () => {
+        const r = await P.NetworkTools.ping({ host: '127.0.0.1', timeout: 5000 });
+        if (!r.reachable)
+          throw new Error('127.0.0.1 not reachable');
+        return 'reachable=true latency=' + r.latencyMs + 'ms';
+      });
+
+      // ═══ Tier 1: TTS ══════════════════════════════════════════════════════
+      await run('tts_get_languages', async () => {
+        const r = await P.TextToSpeech.getSupportedLanguages();
+        if (!Array.isArray(r.languages))
+          throw new Error('languages not an array');
+        return r.languages.length + ' languages';
+      });
+
+      // ═══ Tier 2: Availability checks (may skip) ═══════════════════════════
+      // Wrap each in a 10s timeout to prevent hanging on permission dialogs
+      function withTimeout(fn, ms) {
+        return () => Promise.race([
+          fn(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout after ' + ms + 'ms')), ms))
+        ]);
+      }
+
+      await runSkippable('geolocation', withTimeout(async () => {
+        const r = await P.Geolocation.getCurrentPosition({ timeout: 8000 });
+        return 'lat=' + r.coords.latitude.toFixed(4) + ' lng=' + r.coords.longitude.toFixed(4);
+      }, 10000));
+
+      await runSkippable('speech_available', withTimeout(async () => {
+        if (!P.SpeechRecognition) throw new Error('plugin not available');
+        const r = await P.SpeechRecognition.available();
+        return 'available=' + r.available;
+      }, 10000));
+
+      await runSkippable('speech_languages', withTimeout(async () => {
+        if (!P.SpeechRecognition) throw new Error('plugin not available');
+        const r = await P.SpeechRecognition.getSupportedLanguages();
+        if (!r.languages) throw new Error('not available');
+        return r.languages.length + ' languages';
+      }, 10000));
+
+      await runSkippable('barcode_supported', withTimeout(async () => {
+        if (!P.BarcodeScanner) throw new Error('plugin not available');
+        const r = await P.BarcodeScanner.isSupported();
+        return 'supported=' + r.supported;
+      }, 10000));
+
+      await runSkippable('nfc_supported', withTimeout(async () => {
+        if (!P.CapacitorNfc) throw new Error('plugin not available');
+        const r = await P.CapacitorNfc.isSupported();
+        return 'supported=' + JSON.stringify(r);
+      }, 10000));
+
+      await runSkippable('biometric_available', withTimeout(async () => {
+        if (!P.BiometricAuthNative) throw new Error('plugin not available');
+        const r = await P.BiometricAuthNative.checkBiometry();
+        return 'available=' + r.isAvailable + ' type=' + r.biometryType;
+      }, 10000));
+
+      await runSkippable('health_available', withTimeout(async () => {
+        if (!P.Health) throw new Error('plugin not available');
+        const r = await P.Health.isAvailable();
+        return 'available=' + JSON.stringify(r);
+      }, 10000));
+
+      // ─── Summary ─────────────────────────────────────────────────────────
+      const total = tests.length;
+      const summary = document.getElementById('summary');
+      const parts = [passed + '/' + total + ' passed'];
+      if (skipped) parts.push(skipped + ' skipped');
+      if (failed)  parts.push(failed + ' FAILED');
+      summary.textContent = parts.join(' — ') + (failed ? '' : ' ✓');
+      summary.style.color = failed ? '#ef4444' : '#22c55e';
+
+      emitDone(passed, failed, skipped, total);
+    }
+
+    // ─── Auto-start: poll for Capacitor bridge ─────────────────────────────
+    async function waitForBridgeAndRun() {
+      const statusEl = document.getElementById('status');
+      renderTests();
+
+      for (let i = 0; i < 60; i++) {
+        if (window.Capacitor?.Plugins?.Clipboard) {
+          statusEl.textContent = 'Bridge ready — running tests...';
+          console.log('__DEVICE_TOOLS_BRIDGE_READY__');
+          try {
+            await runTests();
+          } catch (err) {
+            console.error('Test runner crashed:', err);
+            emitDone(0, tests.length, 0, tests.length);
+          }
+          return;
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+
+      statusEl.textContent = 'ERROR: Capacitor bridge not ready after 30s';
+      console.error('__DEVICE_TOOLS_BRIDGE_TIMEOUT__');
+      emitDone(0, tests.length, 0, tests.length);
+    }
+
+    window.addEventListener('DOMContentLoaded', waitForBridgeAndRun);
+  </script>
+</body>
+</html>

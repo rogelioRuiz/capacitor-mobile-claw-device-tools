@@ -1,0 +1,43 @@
+{
+  "name": "device-tools-e2e-test",
+  "version": "1.0.0",
+  "private": true,
+  "description": "E2E test app for capacitor-mobile-claw-device-tools",
+  "scripts": {
+    "sync": "cap sync",
+    "sync:android": "cap sync android",
+    "sync:ios": "cap sync ios",
+    "build:apk": "cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
+    "@capacitor/ios": "^8.1.0",
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/camera": "^8.0.1",
+    "@capacitor/clipboard": "^8.0.1",
+    "@capacitor/device": "^8.0.1",
+    "@capacitor/geolocation": "^8.1.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/local-notifications": "^8.0.1",
+    "@capacitor/motion": "^8.0.0",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/push-notifications": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
+    "@aparajita/capacitor-biometric-auth": "^10.0.0",
+    "@aparajita/capacitor-secure-storage": "^8.0.0",
+    "@capacitor-community/bluetooth-le": "^8.1.0",
+    "@capacitor-community/contacts": "^7.1.0",
+    "@capacitor-community/keep-awake": "^8.0.0",
+    "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor-community/text-to-speech": "^8.0.0",
+    "@capacitor-mlkit/barcode-scanning": "^8.0.1",
+    "@capgo/capacitor-health": "^8.2.15",
+    "@capgo/capacitor-nfc": "^8.0.15",
+    "capacitor-mobile-claw-device-tools": "file:.."
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.1.0"
+  }
+}

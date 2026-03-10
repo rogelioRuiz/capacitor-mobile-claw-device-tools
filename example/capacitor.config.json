@@ -1,0 +1,9 @@
+{
+  "appId": "io.t6x.devicetools.test",
+  "appName": "DeviceTools Test",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": true
+  },
+  "loggingBehavior": "debug"
+}

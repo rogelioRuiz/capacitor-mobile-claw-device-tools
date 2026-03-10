@@ -1,6 +1,6 @@
 {
   "name": "capacitor-mobile-claw-device-tools",
-  "version": "1.2.0",
+  "version": "1.3.1",
   "description": "Device MCP tools for capacitor-mobile-claw — 64+ hardware and network tools (clipboard, camera, SSH, sensors, etc.)",
   "main": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
@@ -27,6 +27,7 @@
     "android/src/main/",
     "android/build.gradle",
     "ios/Sources/",
+    "Package.swift",
     "CapacitorMobileClawDeviceTools.podspec"
   ],
   "capacitor": {
@@ -51,16 +52,36 @@
     "@capacitor/share": "^8.0.0"
   },
   "peerDependenciesMeta": {
-    "@capacitor/clipboard": { "optional": true },
-    "@capacitor/camera": { "optional": true },
-    "@capacitor/geolocation": { "optional": true },
-    "@capacitor/haptics": { "optional": true },
-    "@capacitor/local-notifications": { "optional": true },
-    "@capacitor/network": { "optional": true },
-    "@capacitor/share": { "optional": true },
-    "@capacitor/app": { "optional": true },
-    "@capacitor/preferences": { "optional": true },
-    "@capacitor/push-notifications": { "optional": true }
+    "@capacitor/clipboard": {
+      "optional": true
+    },
+    "@capacitor/camera": {
+      "optional": true
+    },
+    "@capacitor/geolocation": {
+      "optional": true
+    },
+    "@capacitor/haptics": {
+      "optional": true
+    },
+    "@capacitor/local-notifications": {
+      "optional": true
+    },
+    "@capacitor/network": {
+      "optional": true
+    },
+    "@capacitor/share": {
+      "optional": true
+    },
+    "@capacitor/app": {
+      "optional": true
+    },
+    "@capacitor/preferences": {
+      "optional": true
+    },
+    "@capacitor/push-notifications": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",

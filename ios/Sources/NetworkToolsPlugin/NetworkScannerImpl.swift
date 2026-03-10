@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import SystemConfiguration
 
 struct PingResultInfo {
     let reachable: Bool
@@ -18,40 +19,87 @@ class NetworkScannerImpl {
     func ping(host: String, timeout: Int, completion: @escaping (PingResultInfo) -> Void) {
         let startTime = DispatchTime.now()
 
-        let endpoint = NWEndpoint.hostPort(
-            host: NWEndpoint.Host(host),
-            port: NWEndpoint.Port(rawValue: 80)! // TCP connect probe
-        )
+        // Use SCNetworkReachability for host reachability (matches Android's InetAddress.isReachable)
+        var zeroAddress = sockaddr_in()
+        zeroAddress.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        zeroAddress.sin_family = sa_family_t(AF_INET)
 
-        let connection = NWConnection(to: endpoint, using: .tcp)
-        var completed = false
+        // Parse host to sockaddr
+        if let addr = IPv4Address(host) {
+            let bytes = addr.rawValue
+            zeroAddress.sin_addr.s_addr = UInt32(bytes[0]) | (UInt32(bytes[1]) << 8) | (UInt32(bytes[2]) << 16) | (UInt32(bytes[3]) << 24)
+        }
 
-        connection.stateUpdateHandler = { state in
-            guard !completed else { return }
-            switch state {
-            case .ready:
-                completed = true
-                let elapsed = DispatchTime.now().uptimeNanoseconds - startTime.uptimeNanoseconds
-                let latencyMs = Int(elapsed / 1_000_000)
-                connection.cancel()
-                completion(PingResultInfo(reachable: true, latencyMs: latencyMs))
-            case .failed, .cancelled:
-                completed = true
-                connection.cancel()
-                completion(PingResultInfo(reachable: false, latencyMs: 0))
-            default:
-                break
+        let reachability = withUnsafePointer(to: &zeroAddress, {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                SCNetworkReachabilityCreateWithAddress(nil, $0)
+            }
+        })
+
+        if let reachability = reachability {
+            var flags = SCNetworkReachabilityFlags()
+            if SCNetworkReachabilityGetFlags(reachability, &flags) {
+                let isReachable = flags.contains(.reachable)
+                let needsConnection = flags.contains(.connectionRequired)
+                if isReachable && !needsConnection {
+                    let elapsed = DispatchTime.now().uptimeNanoseconds - startTime.uptimeNanoseconds
+                    let latencyMs = Int(elapsed / 1_000_000)
+                    completion(PingResultInfo(reachable: true, latencyMs: latencyMs))
+                    return
+                }
             }
         }
 
-        connection.start(queue: DispatchQueue.global(qos: .userInitiated))
+        // Fallback: TCP connect probe to common ports
+        let ports: [UInt16] = [80, 443, 7, 22]
+        let group = DispatchGroup()
+        var reachable = false
+        var bestLatency = 0
+        let lock = NSLock()
 
-        // Timeout
-        DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(timeout)) {
-            guard !completed else { return }
-            completed = true
-            connection.cancel()
-            completion(PingResultInfo(reachable: false, latencyMs: 0))
+        for port in ports {
+            group.enter()
+            let endpoint = NWEndpoint.hostPort(
+                host: NWEndpoint.Host(host),
+                port: NWEndpoint.Port(rawValue: port)!
+            )
+            let connection = NWConnection(to: endpoint, using: .tcp)
+            var done = false
+
+            connection.stateUpdateHandler = { state in
+                guard !done else { return }
+                switch state {
+                case .ready:
+                    done = true
+                    let elapsed = DispatchTime.now().uptimeNanoseconds - startTime.uptimeNanoseconds
+                    let latencyMs = Int(elapsed / 1_000_000)
+                    lock.lock()
+                    reachable = true
+                    if bestLatency == 0 || latencyMs < bestLatency { bestLatency = latencyMs }
+                    lock.unlock()
+                    connection.cancel()
+                    group.leave()
+                case .failed, .cancelled:
+                    done = true
+                    connection.cancel()
+                    group.leave()
+                default:
+                    break
+                }
+            }
+
+            connection.start(queue: DispatchQueue.global(qos: .userInitiated))
+
+            DispatchQueue.global().asyncAfter(deadline: .now() + .milliseconds(timeout)) {
+                guard !done else { return }
+                done = true
+                connection.cancel()
+                group.leave()
+            }
+        }
+
+        group.notify(queue: .global()) {
+            completion(PingResultInfo(reachable: reachable, latencyMs: bestLatency))
         }
     }
 

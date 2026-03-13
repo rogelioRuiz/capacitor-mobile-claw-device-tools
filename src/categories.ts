@@ -11,6 +11,7 @@ export interface McpToolCategory {
   descriptionKey: string
   privacyKey: string
   toolNames: string[]
+  runtime: 'webview' | 'native' | 'hybrid'
 }
 
 export interface McpCategorySection {
@@ -28,6 +29,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.ssh.description',
     privacyKey: 'settings.mcp.categories.ssh.privacy',
     toolNames: ['ssh_connect', 'ssh_exec', 'ssh_disconnect'],
+    runtime: 'webview',
   },
   {
     id: 'sftp',
@@ -35,6 +37,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.sftp.description',
     privacyKey: 'settings.mcp.categories.sftp.privacy',
     toolNames: ['sftp_list', 'sftp_download', 'sftp_upload'],
+    runtime: 'webview',
   },
   {
     id: 'http',
@@ -42,6 +45,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.http.description',
     privacyKey: 'settings.mcp.categories.http.privacy',
     toolNames: ['http_request'],
+    runtime: 'webview',
   },
   {
     id: 'tcp',
@@ -49,6 +53,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.tcp.description',
     privacyKey: 'settings.mcp.categories.tcp.privacy',
     toolNames: ['tcp_connect', 'tcp_send', 'tcp_read', 'tcp_disconnect'],
+    runtime: 'webview',
   },
   {
     id: 'udp',
@@ -56,6 +61,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.udp.description',
     privacyKey: 'settings.mcp.categories.udp.privacy',
     toolNames: ['udp_send', 'udp_broadcast'],
+    runtime: 'webview',
   },
   {
     id: 'discovery',
@@ -63,6 +69,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.discovery.description',
     privacyKey: 'settings.mcp.categories.discovery.privacy',
     toolNames: ['ping', 'network_scan', 'mdns_discover'],
+    runtime: 'webview',
   },
   {
     id: 'wol',
@@ -70,6 +77,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.wol.description',
     privacyKey: 'settings.mcp.categories.wol.privacy',
     toolNames: ['wol_send'],
+    runtime: 'webview',
   },
   // --- Sensors & Camera ---
   {
@@ -78,6 +86,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.camera.description',
     privacyKey: 'settings.mcp.categories.camera.privacy',
     toolNames: ['camera_take_photo', 'camera_pick_image'],
+    runtime: 'webview',
   },
   {
     id: 'barcode',
@@ -85,6 +94,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.barcode.description',
     privacyKey: 'settings.mcp.categories.barcode.privacy',
     toolNames: ['barcode_scan', 'barcode_is_supported'],
+    runtime: 'webview',
   },
   {
     id: 'motion-sensors',
@@ -92,6 +102,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.motionSensors.description',
     privacyKey: 'settings.mcp.categories.motionSensors.privacy',
     toolNames: ['motion_get_acceleration', 'motion_get_orientation'],
+    runtime: 'webview',
   },
   {
     id: 'geolocation',
@@ -99,6 +110,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.geolocation.description',
     privacyKey: 'settings.mcp.categories.geolocation.privacy',
     toolNames: ['geolocation_get_current'],
+    runtime: 'webview',
   },
   // --- Communication ---
   {
@@ -107,6 +119,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.speech.description',
     privacyKey: 'settings.mcp.categories.speech.privacy',
     toolNames: ['speech_listen', 'speech_is_available', 'speech_get_languages'],
+    runtime: 'webview',
   },
   {
     id: 'tts',
@@ -114,6 +127,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.tts.description',
     privacyKey: 'settings.mcp.categories.tts.privacy',
     toolNames: ['tts_speak', 'tts_get_languages'],
+    runtime: 'webview',
   },
   {
     id: 'bluetooth',
@@ -121,6 +135,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.bluetooth.description',
     privacyKey: 'settings.mcp.categories.bluetooth.privacy',
     toolNames: ['ble_scan', 'ble_connect', 'ble_read', 'ble_write', 'ble_disconnect'],
+    runtime: 'webview',
   },
   {
     id: 'nfc',
@@ -128,6 +143,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.nfc.description',
     privacyKey: 'settings.mcp.categories.nfc.privacy',
     toolNames: ['nfc_read', 'nfc_write', 'nfc_is_supported'],
+    runtime: 'webview',
   },
   // --- Personal Data ---
   {
@@ -136,6 +152,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.contacts.description',
     privacyKey: 'settings.mcp.categories.contacts.privacy',
     toolNames: ['contacts_list', 'contacts_search'],
+    runtime: 'webview',
   },
   {
     id: 'health',
@@ -143,6 +160,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.health.description',
     privacyKey: 'settings.mcp.categories.health.privacy',
     toolNames: ['health_is_available', 'health_request_auth', 'health_query'],
+    runtime: 'webview',
   },
   {
     id: 'biometric',
@@ -150,6 +168,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.biometric.description',
     privacyKey: 'settings.mcp.categories.biometric.privacy',
     toolNames: ['biometric_authenticate', 'biometric_is_available'],
+    runtime: 'webview',
   },
   // --- Device Controls ---
   {
@@ -158,6 +177,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.deviceInfo.description',
     privacyKey: 'settings.mcp.categories.deviceInfo.privacy',
     toolNames: ['device_get_info', 'device_get_battery'],
+    runtime: 'webview',
   },
   {
     id: 'clipboard',
@@ -165,6 +185,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.clipboard.description',
     privacyKey: 'settings.mcp.categories.clipboard.privacy',
     toolNames: ['clipboard_read', 'clipboard_write'],
+    runtime: 'webview',
   },
   {
     id: 'haptics',
@@ -172,6 +193,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.haptics.description',
     privacyKey: 'settings.mcp.categories.haptics.privacy',
     toolNames: ['haptics_impact', 'haptics_notification', 'haptics_vibrate'],
+    runtime: 'webview',
   },
   {
     id: 'notifications',
@@ -179,6 +201,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.notifications.description',
     privacyKey: 'settings.mcp.categories.notifications.privacy',
     toolNames: ['notification_schedule', 'notification_cancel'],
+    runtime: 'webview',
   },
   {
     id: 'push-notifications',
@@ -186,6 +209,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.pushNotifications.description',
     privacyKey: 'settings.mcp.categories.pushNotifications.privacy',
     toolNames: ['push_get_token', 'push_get_delivered'],
+    runtime: 'webview',
   },
   {
     id: 'network-status',
@@ -193,6 +217,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.networkStatus.description',
     privacyKey: 'settings.mcp.categories.networkStatus.privacy',
     toolNames: ['network_status'],
+    runtime: 'webview',
   },
   {
     id: 'share',
@@ -200,6 +225,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.share.description',
     privacyKey: 'settings.mcp.categories.share.privacy',
     toolNames: ['share_content'],
+    runtime: 'webview',
   },
   {
     id: 'secure-storage',
@@ -207,6 +233,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.secureStorage.description',
     privacyKey: 'settings.mcp.categories.secureStorage.privacy',
     toolNames: ['secure_storage_get', 'secure_storage_set', 'secure_storage_remove'],
+    runtime: 'webview',
   },
   {
     id: 'keep-awake',
@@ -214,6 +241,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.keepAwake.description',
     privacyKey: 'settings.mcp.categories.keepAwake.privacy',
     toolNames: ['screen_keep_awake', 'screen_allow_sleep'],
+    runtime: 'webview',
   },
   {
     id: 'app-state',
@@ -221,6 +249,7 @@ export const mcpToolCategories: McpToolCategory[] = [
     descriptionKey: 'settings.mcp.categories.appState.description',
     privacyKey: 'settings.mcp.categories.appState.privacy',
     toolNames: ['app_get_info', 'app_get_state'],
+    runtime: 'webview',
   },
 ]
 
